@@ -75,7 +75,7 @@ export class WebScraperDataProvider {
             this.extractorOptions,
             existingHTML,
             this.priority,
-            this.teamId,
+            this.teamId
           );
           processedUrls++;
           if (inProgress) {
@@ -162,7 +162,7 @@ export class WebScraperDataProvider {
         includes = this.includes;
       }
     } else {
-      includes = this.includes.split(',');
+      includes = this.includes.split(",");
     }
 
     let excludes: string[];
@@ -171,7 +171,7 @@ export class WebScraperDataProvider {
         excludes = this.excludes;
       }
     } else {
-      excludes = this.excludes.split(',');
+      excludes = this.excludes.split(",");
     }
 
     const crawler = new WebCrawler({
@@ -303,11 +303,14 @@ export class WebScraperDataProvider {
         delete document.html;
       }
     }
-    
+
     // documents = await this.applyImgAltText(documents);
     if (this.mode === "single_urls" && this.pageOptions.includeExtract) {
       const extractionMode = this.extractorOptions?.mode ?? "markdown";
-      const completionMode = extractionMode === "llm-extraction-from-raw-html" ? "raw-html" : "markdown";
+      const completionMode =
+        extractionMode === "llm-extraction-from-raw-html"
+          ? "raw-html"
+          : "markdown";
 
       if (
         extractionMode === "llm-extraction" ||
@@ -344,7 +347,10 @@ export class WebScraperDataProvider {
         const insertedLogId = await logInsertPromise;
         ScrapeEvents.updateScrapeResult(insertedLogId, {
           response_size: content.length,
-          success: !(pageStatusCode && pageStatusCode >= 400) && !!content && (content.trim().length >= 100),
+          success:
+            !(pageStatusCode && pageStatusCode >= 400) &&
+            !!content &&
+            content.trim().length >= 100,
           error: pageError,
           response_code: pageStatusCode,
           time_taken: Date.now() - timer,
@@ -370,14 +376,16 @@ export class WebScraperDataProvider {
           result: null,
         });
 
-        const { content, pageStatusCode, pageError } = await fetchAndProcessDocx(
-          docxLink
-        );
+        const { content, pageStatusCode, pageError } =
+          await fetchAndProcessDocx(docxLink);
 
         const insertedLogId = await logInsertPromise;
         ScrapeEvents.updateScrapeResult(insertedLogId, {
           response_size: content.length,
-          success: !(pageStatusCode && pageStatusCode >= 400) && !!content && (content.trim().length >= 100),
+          success:
+            !(pageStatusCode && pageStatusCode >= 400) &&
+            !!content &&
+            content.trim().length >= 100,
           error: pageError,
           response_code: pageStatusCode,
           time_taken: Date.now() - timer,
@@ -457,7 +465,7 @@ export class WebScraperDataProvider {
       const path = url.pathname;
 
       if (!Array.isArray(this.excludes)) {
-        this.excludes = this.excludes.split(',');
+        this.excludes = this.excludes.split(",");
       }
 
       if (this.excludes.length > 0 && this.excludes[0] !== "") {
@@ -472,7 +480,7 @@ export class WebScraperDataProvider {
       }
 
       if (!Array.isArray(this.includes)) {
-        this.includes = this.includes.split(',');
+        this.includes = this.includes.split(",");
       }
 
       if (this.includes.length > 0 && this.includes[0] !== "") {
@@ -502,6 +510,7 @@ export class WebScraperDataProvider {
   }
 
   async setCachedDocuments(documents: Document[], childrenLinks?: string[]) {
+    //console.log("cache docs");
     for (const document of documents) {
       if (document.content.trim().length === 0) {
         continue;
@@ -577,13 +586,18 @@ export class WebScraperDataProvider {
     this.pageOptions = {
       onlyMainContent: options.pageOptions?.onlyMainContent ?? false,
       includeHtml: options.pageOptions?.includeHtml ?? false,
-      replaceAllPathsWithAbsolutePaths: options.pageOptions?.replaceAllPathsWithAbsolutePaths ?? true,
+      replaceAllPathsWithAbsolutePaths:
+        options.pageOptions?.replaceAllPathsWithAbsolutePaths ?? true,
       parsePDF: options.pageOptions?.parsePDF ?? true,
       onlyIncludeTags: options.pageOptions?.onlyIncludeTags ?? [],
       removeTags: options.pageOptions?.removeTags ?? [],
       includeMarkdown: options.pageOptions?.includeMarkdown ?? true,
       includeRawHtml: options.pageOptions?.includeRawHtml ?? false,
-      includeExtract: options.pageOptions?.includeExtract ?? (options.extractorOptions?.mode && options.extractorOptions?.mode !== "markdown") ?? false, 
+      includeExtract:
+        options.pageOptions?.includeExtract ??
+        (options.extractorOptions?.mode &&
+          options.extractorOptions?.mode !== "markdown") ??
+        false,
       waitFor: options.pageOptions?.waitFor ?? undefined,
       headers: options.pageOptions?.headers ?? undefined,
       includeLinks: options.pageOptions?.includeLinks ?? true,
@@ -596,12 +610,16 @@ export class WebScraperDataProvider {
       options.pageOptions?.replaceAllPathsWithAbsolutePaths ??
       false;
 
-    if (typeof options.crawlerOptions?.excludes === 'string') {
-      this.excludes = options.crawlerOptions?.excludes.split(',').filter((item) => item.trim() !== "");
+    if (typeof options.crawlerOptions?.excludes === "string") {
+      this.excludes = options.crawlerOptions?.excludes
+        .split(",")
+        .filter((item) => item.trim() !== "");
     }
 
-    if (typeof options.crawlerOptions?.includes === 'string') {
-      this.includes = options.crawlerOptions?.includes.split(',').filter((item) => item.trim() !== "");
+    if (typeof options.crawlerOptions?.includes === "string") {
+      this.includes = options.crawlerOptions?.includes
+        .split(",")
+        .filter((item) => item.trim() !== "");
     }
 
     this.crawlerMode = options.crawlerOptions?.mode ?? "default";
@@ -612,8 +630,6 @@ export class WebScraperDataProvider {
       options.crawlerOptions?.allowExternalContentLinks ?? false;
     this.priority = options.priority;
     this.teamId = options.teamId ?? null;
-
-
 
     // make sure all urls start with https://
     this.urls = this.urls.map((url) => {

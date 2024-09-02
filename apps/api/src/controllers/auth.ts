@@ -42,6 +42,7 @@ export async function authenticateUser(
 ): Promise<AuthResponse> {
   return withAuth(supaAuthenticateUser)(req, res, mode);
 }
+
 function setTrace(team_id: string, api_key: string) {
   try {
     setTraceAttributes({
@@ -104,8 +105,11 @@ export async function supaAuthenticateUser(
   status?: number;
   plan?: PlanType;
 }> {
-
-  const authHeader = req.headers.authorization ?? (req.headers["sec-websocket-protocol"] ? `Bearer ${req.headers["sec-websocket-protocol"]}` : null);
+  const authHeader =
+    req.headers.authorization ??
+    (req.headers["sec-websocket-protocol"]
+      ? `Bearer ${req.headers["sec-websocket-protocol"]}`
+      : null);
   if (!authHeader) {
     return { success: false, error: "Unauthorized", status: 401 };
   }
@@ -137,7 +141,7 @@ export async function supaAuthenticateUser(
       rateLimiter = getRateLimiter(RateLimiterMode.CrawlStatus, token);
     } else {
       rateLimiter = getRateLimiter(RateLimiterMode.Preview, token);
-    }      
+    }
     teamId = "preview";
   } else {
     normalizedApi = parseApi(token);
@@ -341,7 +345,9 @@ export async function supaAuthenticateUser(
     if (error || !data || data.length === 0) {
       if (error) {
         Sentry.captureException(error);
-        Logger.warn(`Error fetching api key: ${error.message} or data is empty`);
+        Logger.warn(
+          `Error fetching api key: ${error.message} or data is empty`
+        );
       }
       return {
         success: false,

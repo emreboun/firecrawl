@@ -7,7 +7,6 @@ let scrapeQueue: Queue;
 export const redisConnection = new IORedis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
 });
-
 export const scrapeQueueName = "{scrapeQueue}";
 
 export function getScrapeQueue() {
@@ -33,7 +32,6 @@ export function getScrapeQueue() {
   }
   return scrapeQueue;
 }
-
 
 // === REMOVED IN FAVOR OF POLLING -- NOT RELIABLE
 // import { QueueEvents } from 'bullmq';

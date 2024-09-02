@@ -14,11 +14,16 @@ export async function logJob(job: FirecrawlJob) {
     // Redact any pages that have an authorization header
     if (
       job.pageOptions &&
-      job.pageOptions.headers &&
-      job.pageOptions.headers["Authorization"]
+      job.pageOptions.headers /* &&
+      job.pageOptions.headers["Authorization"] */
     ) {
       job.pageOptions.headers["Authorization"] = "REDACTED";
-      job.docs = [{ content: "REDACTED DUE TO AUTHORIZATION HEADER", html: "REDACTED DUE TO AUTHORIZATION HEADER" }];
+      job.docs = [
+        {
+          content: "REDACTED DUE TO AUTHORIZATION HEADER",
+          html: "REDACTED DUE TO AUTHORIZATION HEADER",
+        },
+      ];
     }
 
     const { data, error } = await supabase_service

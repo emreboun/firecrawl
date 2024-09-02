@@ -52,6 +52,8 @@ export async function scrapeHelper(
     };
   }
 
+  //console.log("helper 1");
+
   const jobPriority = await getJobPriority({ plan, team_id, basePriority: 10 });
 
   const job = await addScrapeJob(
@@ -71,6 +73,7 @@ export async function scrapeHelper(
   );
 
   let doc;
+  //console.log("helper 2");
 
   const err = await Sentry.startSpan(
     {
@@ -80,7 +83,9 @@ export async function scrapeHelper(
     },
     async (span) => {
       try {
+        //console.log("h1");
         doc = (await waitForJob(job.id, timeout))[0];
+        //console.log("h2");
       } catch (e) {
         if (e instanceof Error && e.message.startsWith("Job wait")) {
           span.setAttribute("timedOut", true);
@@ -110,12 +115,14 @@ export async function scrapeHelper(
       return null;
     }
   );
+  //console.log("helper 3");
 
   if (err !== null) {
     return err;
   }
 
   await job.remove();
+  //console.log("helper 4");
 
   if (!doc) {
     console.error("!!! PANIC DOC IS", doc, job);
@@ -131,20 +138,22 @@ export async function scrapeHelper(
   delete doc.provider;
 
   // Remove rawHtml if pageOptions.rawHtml is false and extractorOptions.mode is llm-extraction-from-raw-html
-  if (
+  /* if (
     !pageOptions.includeRawHtml &&
     extractorOptions.mode == "llm-extraction-from-raw-html"
   ) {
     if (doc.rawHtml) {
       delete doc.rawHtml;
     }
-  }
+  } */
 
   if (!pageOptions.includeHtml) {
     if (doc.html) {
       delete doc.html;
     }
   }
+
+  //console.log("helper end");
 
   return {
     success: true,
@@ -155,16 +164,17 @@ export async function scrapeHelper(
 
 export async function scrapeController(req: Request, res: Response) {
   try {
+    //console.log("scrape");
     let earlyReturn = false;
     // make sure to authenticate user first, Bearer <token>
-    const { success, team_id, error, status, plan } = await authenticateUser(
+    /* const { success, team_id, error, status, plan } = await authenticateUser(
       req,
       res,
       RateLimiterMode.Scrape
     );
     if (!success) {
       return res.status(status).json({ error });
-    }
+    } */
 
     const crawlerOptions = req.body.crawlerOptions ?? {};
     const pageOptions = { ...defaultPageOptions, ...req.body.pageOptions };
@@ -175,7 +185,7 @@ export async function scrapeController(req: Request, res: Response) {
     const origin = req.body.origin ?? defaultOrigin;
     let timeout = req.body.timeout ?? defaultTimeout;
 
-    if (extractorOptions.mode.includes("llm-extraction")) {
+    /* if (extractorOptions.mode.includes("llm-extraction")) {
       if (
         typeof extractorOptions.extractionSchema !== "object" ||
         extractorOptions.extractionSchema === null
@@ -188,10 +198,10 @@ export async function scrapeController(req: Request, res: Response) {
 
       pageOptions.onlyMainContent = true;
       timeout = req.body.timeout ?? 90000;
-    }
+    } */
 
     // checkCredits
-    try {
+    /* try {
       const { success: creditsCheckSuccess, message: creditsCheckMessage } =
         await checkTeamCredits(team_id, 1);
       if (!creditsCheckSuccess) {
@@ -205,8 +215,8 @@ export async function scrapeController(req: Request, res: Response) {
         error:
           "Error checking team credits. Please contact hello@firecrawl.com for help.",
       });
-    }
-
+    } */
+    const team_id = uuidv4();
     const jobId = uuidv4();
 
     const startTime = new Date().getTime();
@@ -218,11 +228,11 @@ export async function scrapeController(req: Request, res: Response) {
       pageOptions,
       extractorOptions,
       timeout,
-      plan
+      undefined
     );
     const endTime = new Date().getTime();
     const timeTakenInSeconds = (endTime - startTime) / 1000;
-    const numTokens =
+    /* const numTokens =
       result.data && result.data.markdown
         ? numTokensFromString(result.data.markdown, "gpt-3.5-turbo")
         : 0;
@@ -253,17 +263,17 @@ export async function scrapeController(req: Request, res: Response) {
           });
         }
       }
-    }
-    
+    } */
+
     let doc = result.data;
     if (!pageOptions || !pageOptions.includeRawHtml) {
       if (doc && doc.rawHtml) {
         delete doc.rawHtml;
       }
     }
-  
-    if(pageOptions && pageOptions.includeExtract) {
-      if(!pageOptions.includeMarkdown && doc && doc.markdown) {
+
+    if (pageOptions && pageOptions.includeExtract) {
+      if (!pageOptions.includeMarkdown && doc && doc.markdown) {
         delete doc.markdown;
       }
     }
@@ -275,14 +285,14 @@ export async function scrapeController(req: Request, res: Response) {
       num_docs: 1,
       docs: [doc],
       time_taken: timeTakenInSeconds,
-      team_id: team_id,
+      team_id: "",
       mode: "scrape",
       url: req.body.url,
       crawlerOptions: crawlerOptions,
       pageOptions: pageOptions,
       origin: origin,
       extractor_options: extractorOptions,
-      num_tokens: numTokens,
+      num_tokens: -1,
     });
 
     return res.status(result.returnCode).json(result);

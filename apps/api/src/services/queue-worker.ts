@@ -35,7 +35,6 @@ import {
   getJobPriority,
 } from "../../src/lib/job-priority";
 import { PlanType } from "../types";
-import { getJobs } from "../../src/controllers/v1/crawl-status";
 
 if (process.env.ENV === "production") {
   initSDK({
@@ -121,6 +120,8 @@ const workerFun = async (
     const canAcceptConnection = await monitor.acceptConnection();
     if (!canAcceptConnection) {
       console.log("Cant accept connection");
+      //console.log(monitor); // log the monitor object to inspect its state
+
       await sleep(cantAcceptConnectionInterval); // more sleep
       continue;
     }
@@ -255,25 +256,13 @@ async function processJob(job: Job, token: string) {
       docs,
     };
 
-    // No idea what this does and when it is called.
-    if (job.data.mode === "crawl" && !job.data.v1) {
-      callWebhook(
+    if (job.data.mode === "crawl") {
+      await callWebhook(
         job.data.team_id,
         job.id as string,
         data,
         job.data.webhook,
         job.data.v1
-      );
-    }
-    if (job.data.webhook && job.data.mode !== "crawl" && job.data.v1) {
-      await callWebhook(
-        job.data.team_id,
-        job.data.crawl_id,
-        data,
-        job.data.webhook,
-        job.data.v1,
-        "crawl.page",
-        true
       );
     }
 
@@ -346,98 +335,82 @@ async function processJob(job: Job, token: string) {
       }
 
       if (await finishCrawl(job.data.crawl_id)) {
-        
+        const jobIDs = await getCrawlJobs(job.data.crawl_id);
 
-        if (!job.data.v1) {
-          const jobIDs = await getCrawlJobs(job.data.crawl_id);
-
-          const jobs = (await getJobs(jobIDs)).sort((a, b) => a.timestamp - b.timestamp);
-          const jobStatuses = await Promise.all(jobs.map((x) => x.getState()));
-          const jobStatus =
-            sc.cancelled || jobStatuses.some((x) => x === "failed")
-              ? "failed"
-              : "completed";
-
-          const fullDocs = jobs.map((x) =>
-            Array.isArray(x.returnvalue) ? x.returnvalue[0] : x.returnvalue
-          );
-
-          await logJob({
-            job_id: job.data.crawl_id,
-            success: jobStatus === "completed",
-            message: sc.cancelled ? "Cancelled" : message,
-            num_docs: fullDocs.length,
-            docs: [],
-            time_taken: (Date.now() - sc.createdAt) / 1000,
-            team_id: job.data.team_id,
-            mode: "crawl",
-            url: sc.originUrl,
-            crawlerOptions: sc.crawlerOptions,
-            pageOptions: sc.pageOptions,
-            origin: job.data.origin,
-          });
-
-          const data = {
-            success: jobStatus !== "failed",
-            result: {
-              links: fullDocs.map((doc) => {
+        const jobs = (
+          await Promise.all(
+            jobIDs.map(async (x) => {
+              if (x === job.id) {
                 return {
-                  content: doc,
-                  source: doc?.metadata?.sourceURL ?? doc?.url ?? "",
+                  async getState() {
+                    return "completed";
+                  },
+                  timestamp: Date.now(),
+                  returnvalue: docs,
                 };
-              }),
-            },
-            project_id: job.data.project_id,
-            error: message /* etc... */,
-            docs: fullDocs,
-          };
+              }
 
-          // v0 web hooks, call when done with all the data
-          if (!job.data.v1) {
-            callWebhook(
-              job.data.team_id,
-              job.data.crawl_id,
-              data,
-              job.data.webhook,
-              job.data.v1,
-              "crawl.completed"
-            );
-          }
-        } else {
-          const jobIDs = await getCrawlJobs(job.data.crawl_id);
-          const jobStatuses = await Promise.all(jobIDs.map((x) => getScrapeQueue().getJobState(x)));
-          const jobStatus =
-            sc.cancelled || jobStatuses.some((x) => x === "failed")
-              ? "failed"
-              : "completed";
+              const j = await getScrapeQueue().getJob(x);
 
-          // v1 web hooks, call when done with no data, but with event completed
-          if (job.data.v1 && job.data.webhook) {
-            callWebhook(
-              job.data.team_id,
-              job.data.crawl_id,
-              [],
-              job.data.webhook,
-              job.data.v1,
-              "crawl.completed"
-              );
-            }
+              if (process.env.USE_DB_AUTHENTICATION === "true") {
+                const supabaseData = await supabaseGetJobById(j.id);
 
-          await logJob({
-            job_id: job.data.crawl_id,
-            success: jobStatus === "completed",
-            message: sc.cancelled ? "Cancelled" : message,
-            num_docs: jobIDs.length,
-            docs: [],
-            time_taken: (Date.now() - sc.createdAt) / 1000,
-            team_id: job.data.team_id,
-            mode: "crawl",
-            url: sc.originUrl,
-            crawlerOptions: sc.crawlerOptions,
-            pageOptions: sc.pageOptions,
-            origin: job.data.origin,
-          });
-        }
+                if (supabaseData) {
+                  j.returnvalue = supabaseData.docs;
+                }
+              }
+
+              return j;
+            })
+          )
+        ).sort((a, b) => a.timestamp - b.timestamp);
+        const jobStatuses = await Promise.all(jobs.map((x) => x.getState()));
+        const jobStatus =
+          sc.cancelled || jobStatuses.some((x) => x === "failed")
+            ? "failed"
+            : "completed";
+
+        const fullDocs = jobs.map((x) =>
+          Array.isArray(x.returnvalue) ? x.returnvalue[0] : x.returnvalue
+        );
+
+        await logJob({
+          job_id: job.data.crawl_id,
+          success: jobStatus === "completed",
+          message: sc.cancelled ? "Cancelled" : message,
+          num_docs: fullDocs.length,
+          docs: [],
+          time_taken: (Date.now() - sc.createdAt) / 1000,
+          team_id: job.data.team_id,
+          mode: "crawl",
+          url: sc.originUrl,
+          crawlerOptions: sc.crawlerOptions,
+          pageOptions: sc.pageOptions,
+          origin: job.data.origin,
+        });
+
+        const data = {
+          success: jobStatus !== "failed",
+          result: {
+            links: fullDocs.map((doc) => {
+              return {
+                content: doc,
+                source: doc?.metadata?.sourceURL ?? doc?.url ?? "",
+              };
+            }),
+          },
+          project_id: job.data.project_id,
+          error: message /* etc... */,
+          docs: fullDocs,
+        };
+
+        await callWebhook(
+          job.data.team_id,
+          job.data.crawl_id,
+          data,
+          job.data.webhook,
+          job.data.v1
+        );
       }
     }
 
@@ -480,23 +453,13 @@ async function processJob(job: Job, token: string) {
         "Something went wrong... Contact help@mendable.ai or try again." /* etc... */,
     };
 
-    if (!job.data.v1 && (job.data.mode === "crawl" || job.data.crawl_id)) {
-      callWebhook(
+    if (job.data.mode === "crawl" || job.data.crawl_id) {
+      await callWebhook(
         job.data.team_id,
         job.data.crawl_id ?? (job.id as string),
         data,
         job.data.webhook,
         job.data.v1
-      );
-    }
-    if (job.data.v1) {
-      callWebhook(
-        job.data.team_id,
-        job.id as string,
-        [],
-        job.data.webhook,
-        job.data.v1,
-        "crawl.failed"
       );
     }
 

@@ -4,24 +4,30 @@ import { RateLimiterMode } from "../../../src/types";
 import { isUrlBlocked } from "../../../src/scraper/WebScraper/utils/blocklist";
 import { v4 as uuidv4 } from "uuid";
 import { Logger } from "../../../src/lib/logger";
-import { addCrawlJob, crawlToCrawler, lockURL, saveCrawl, StoredCrawl } from "../../../src/lib/crawl-redis";
+import {
+  addCrawlJob,
+  crawlToCrawler,
+  lockURL,
+  saveCrawl,
+  StoredCrawl,
+} from "../../../src/lib/crawl-redis";
 import { addScrapeJob } from "../../../src/services/queue-jobs";
 import { checkAndUpdateURL } from "../../../src/lib/validateUrl";
 import * as Sentry from "@sentry/node";
 
 export async function crawlPreviewController(req: Request, res: Response) {
   try {
-    const { success, error, status, team_id:a, plan } = await authenticateUser(
+    /* const { success, error, status, team_id:a, plan } = await authenticateUser(
       req,
       res,
       RateLimiterMode.Preview
-    );
+    ); */
 
     const team_id = "preview";
 
-    if (!success) {
+    /* if (!success) {
       return res.status(status).json({ error });
-    }
+    } */
 
     let url = req.body.url;
     if (!url) {
@@ -36,16 +42,18 @@ export async function crawlPreviewController(req: Request, res: Response) {
     }
 
     if (isUrlBlocked(url)) {
-      return res
-        .status(403)
-        .json({
-          error:
-            "Firecrawl currently does not support social media scraping due to policy restrictions. We're actively working on building support for it.",
-        });
+      return res.status(403).json({
+        error:
+          "Firecrawl currently does not support social media scraping due to policy restrictions. We're actively working on building support for it.",
+      });
     }
 
     const crawlerOptions = req.body.crawlerOptions ?? {};
-    const pageOptions = req.body.pageOptions ?? { onlyMainContent: false, includeHtml: false, removeTags: [] };
+    const pageOptions = req.body.pageOptions ?? {
+      onlyMainContent: false,
+      includeHtml: false,
+      removeTags: [],
+    };
 
     // if (mode === "single_urls" && !url.includes(",")) { // NOTE: do we need this?
     //   try {
@@ -89,7 +97,7 @@ export async function crawlPreviewController(req: Request, res: Response) {
       crawlerOptions,
       pageOptions,
       team_id,
-      plan,
+      plan: undefined,
       robots,
       createdAt: Date.now(),
     };
@@ -98,10 +106,12 @@ export async function crawlPreviewController(req: Request, res: Response) {
 
     const crawler = crawlToCrawler(id, sc);
 
-    const sitemap = sc.crawlerOptions?.ignoreSitemap ? null : await crawler.tryGetSitemap();
+    const sitemap = sc.crawlerOptions?.ignoreSitemap
+      ? null
+      : await crawler.tryGetSitemap();
 
     if (sitemap !== null) {
-      for (const url of sitemap.map(x => x.url)) {
+      for (const url of sitemap.map((x) => x.url)) {
         await lockURL(id, sc, url);
         const job = await addScrapeJob({
           url,

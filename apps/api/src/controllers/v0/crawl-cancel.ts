@@ -8,7 +8,7 @@ import * as Sentry from "@sentry/node";
 
 export async function crawlCancelController(req: Request, res: Response) {
   try {
-    const useDbAuthentication = process.env.USE_DB_AUTHENTICATION === 'true';
+    /* const useDbAuthentication = process.env.USE_DB_AUTHENTICATION === 'true';
 
     const { success, team_id, error, status } = await authenticateUser(
       req,
@@ -17,7 +17,7 @@ export async function crawlCancelController(req: Request, res: Response) {
     );
     if (!success) {
       return res.status(status).json({ error });
-    }
+    } */
 
     const sc = await getCrawl(req.params.jobId);
     if (!sc) {
@@ -25,7 +25,7 @@ export async function crawlCancelController(req: Request, res: Response) {
     }
 
     // check if the job belongs to the team
-    if (useDbAuthentication) {
+    /* if (useDbAuthentication) {
       const { data, error: supaError } = await supabase_service
         .from("bulljobs_teams")
         .select("*")
@@ -38,7 +38,7 @@ export async function crawlCancelController(req: Request, res: Response) {
       if (data.length === 0) {
         return res.status(403).json({ error: "Unauthorized" });
       }
-    }
+    } */
 
     try {
       sc.cancelled = true;
@@ -48,7 +48,7 @@ export async function crawlCancelController(req: Request, res: Response) {
     }
 
     res.json({
-      status: "cancelled"
+      status: "cancelled",
     });
   } catch (error) {
     Sentry.captureException(error);

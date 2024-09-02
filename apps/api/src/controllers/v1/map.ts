@@ -30,8 +30,7 @@ export async function mapController(
   req.body = mapRequestSchema.parse(req.body);
 
 
-  const limit : number = req.body.limit ?? 5000;
-
+  const limit = req.body.limit;
   const id = uuidv4();
   let links: string[] = [req.body.url];
 
@@ -111,7 +110,7 @@ export async function mapController(
     job_id: id,
     success: links.length > 0,
     message: "Map completed",
-    num_docs: linksToReturn.length,
+    num_docs: links.length,
     docs: linksToReturn,
     time_taken: timeTakenInSeconds,
     team_id: req.auth.team_id,
