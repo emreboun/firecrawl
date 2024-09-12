@@ -2,11 +2,11 @@ import { Queue } from "bullmq";
 import { Logger } from "../lib/logger";
 import IORedis from "ioredis";
 
-let scrapeQueue: Queue;
-
 export const redisConnection = new IORedis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
 });
+
+let scrapeQueue: Queue;
 
 export const scrapeQueueName = "{scrapeQueue}";
 
@@ -33,7 +33,6 @@ export function getScrapeQueue() {
   }
   return scrapeQueue;
 }
-
 
 // === REMOVED IN FAVOR OF POLLING -- NOT RELIABLE
 // import { QueueEvents } from 'bullmq';

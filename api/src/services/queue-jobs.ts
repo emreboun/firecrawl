@@ -23,29 +23,41 @@ export async function addScrapeJob(
   jobId: string = uuidv4(),
   jobPriority: number = 10
 ): Promise<Job> {
-  
   if (Sentry.isInitialized()) {
     const size = JSON.stringify(webScraperOptions).length;
-    return await Sentry.startSpan({
-      name: "Add scrape job",
-      op: "queue.publish",
-      attributes: {
-        "messaging.message.id": jobId,
-        "messaging.destination.name": getScrapeQueue().name,
-        "messaging.message.body.size": size,
-      },
-    }, async (span) => {
-      return await addScrapeJobRaw({
-        ...webScraperOptions,
-        sentry: {
-          trace: Sentry.spanToTraceHeader(span),
-          baggage: Sentry.spanToBaggageHeader(span),
-          size,
+    return await Sentry.startSpan(
+      {
+        name: "Add scrape job",
+        op: "queue.publish",
+        attributes: {
+          "messaging.message.id": jobId,
+          "messaging.destination.name": getScrapeQueue().name,
+          "messaging.message.body.size": size,
         },
-      }, options, jobId, jobPriority);
-    });
+      },
+      async (span) => {
+        return await addScrapeJobRaw(
+          {
+            ...webScraperOptions,
+            sentry: {
+              trace: Sentry.spanToTraceHeader(span),
+              baggage: Sentry.spanToBaggageHeader(span),
+              size,
+            },
+          },
+          options,
+          jobId,
+          jobPriority
+        );
+      }
+    );
   } else {
-    return await addScrapeJobRaw(webScraperOptions, options, jobId, jobPriority);
+    return await addScrapeJobRaw(
+      webScraperOptions,
+      options,
+      jobId,
+      jobPriority
+    );
   }
 }
 
@@ -68,5 +80,5 @@ export function waitForJob(jobId: string, timeout: number) {
         }
       }
     }, 1000);
-  })
+  });
 }

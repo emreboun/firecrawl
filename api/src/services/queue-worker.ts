@@ -464,7 +464,7 @@ async function processJob(job: Job, token: string) {
         dataIngestionJob: error.dataIngestionJob,
       });
     }
-    Logger.error(error);
+
     if (error.stack) {
       Logger.error(error.stack);
     }

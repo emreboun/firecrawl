@@ -6,7 +6,7 @@ import {
   PlanType,
   RateLimiterMode,
 } from "../types";
-import { supabase_service } from "../services/supabase";
+import { supabase_service } from "../services/supabase_first";
 import { withAuth } from "../lib/withAuth";
 import { RateLimiterRedis } from "rate-limiter-flexible";
 import { setTraceAttributes } from "@hyperdx/node-opentelemetry";

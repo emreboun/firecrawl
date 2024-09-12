@@ -1,8 +1,14 @@
 import "dotenv/config";
 import { ScrapeLog } from "../../types";
-import { supabase_service } from "../supabase";
+import { supabase_service } from "../supabase_first";
 import { PageOptions } from "../../lib/entities";
 import { Logger } from "../../lib/logger";
+import {
+  getAuthConfig,
+  getPostgresConfig,
+  getPostgRESTConfig,
+  getSSOProviders,
+} from "../supabase";
 
 export async function logScrape(
   scrapeLog: ScrapeLog,
@@ -25,6 +31,19 @@ export async function logScrape(
     ) {
       scrapeLog.html = "REDACTED DUE TO AUTHORIZATION HEADER";
     }
+    /* console.log("asd");
+    Logger.info("asd1");
+
+    const config = await getAuthConfig();
+    Logger.info(`config: \n${config}`);
+    const providers = await getSSOProviders();
+    Logger.info(`providers: \n${providers}`);
+    const postConfig = await getPostgresConfig();
+    Logger.info(`postConfig: \n${postConfig}`);
+    const restConfig = await getPostgRESTConfig();
+    Logger.info(`restConfig: \n${restConfig}`); */
+
+    //Logger.info(`log: \n${scrapeLog.toString()}`);
 
     const { data, error } = await supabase_service.from("scrape_logs").insert([
       {
@@ -42,6 +61,7 @@ export async function logScrape(
         ipv6_support: scrapeLog.ipv6_support,
       },
     ]);
+
     if (error) {
       Logger.error(`Error logging proxy:\n${JSON.stringify(error)}`);
     }

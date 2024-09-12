@@ -151,3 +151,47 @@ export function crawlToCrawler(id: string, sc: StoredCrawl): WebCrawler {
 
   return crawler;
 }
+
+// ... other imports ...
+/* 
+export async function getPagedCrawlJobs(
+  crawlId: string,
+  page: number,
+  pageSize: number
+): Promise<[StoredCrawl[], number]> {
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize - 1;
+
+  const jobs: string[] = await redisConnection.lrange(
+    `crawl:${crawlId}:jobs_done_ordered`,
+    startIndex,
+    endIndex
+  );
+
+  const totalJobs = await redisConnection.llen(
+    `crawl:${crawlId}:jobs_done_ordered`
+  );
+
+  const storedJobs: any[] = [];
+  for (const jobId of jobs) {
+    const jobData = await redisConnection.hgetall(
+      `crawl:${crawlId}:job:${jobId}`
+    );
+    if (jobData) {
+      storedJobs.push({
+        id: jobId,
+        // ... other properties you want to retrieve from jobData
+        success: jobData.success === "true", // Assuming success is stored as a string
+        message: jobData.message,
+        num_docs: parseInt(jobData.num_docs, 10),
+        time_taken: parseFloat(jobData.time_taken),
+        team_id: jobData.team_id,
+      });
+    }
+  }
+
+  return [storedJobs, totalJobs];
+}
+
+// ... other code ...
+ */

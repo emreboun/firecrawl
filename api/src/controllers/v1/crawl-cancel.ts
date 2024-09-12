@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import { authenticateUser } from "../auth";
 import { RateLimiterMode } from "../../types";
-import { supabase_service } from "../../services/supabase";
+import { supabase_service } from "../../services/supabase_first";
 import { Logger } from "../../lib/logger";
 import { getCrawl, saveCrawl } from "../../lib/crawl-redis";
 import * as Sentry from "@sentry/node";
 
 export async function crawlCancelController(req: Request, res: Response) {
   try {
-    const useDbAuthentication = process.env.USE_DB_AUTHENTICATION === 'true';
+    const useDbAuthentication = process.env.USE_DB_AUTHENTICATION === "true";
 
     const { success, team_id, error, status } = await authenticateUser(
       req,
@@ -48,7 +48,7 @@ export async function crawlCancelController(req: Request, res: Response) {
     }
 
     res.json({
-      status: "cancelled"
+      status: "cancelled",
     });
   } catch (error) {
     Sentry.captureException(error);

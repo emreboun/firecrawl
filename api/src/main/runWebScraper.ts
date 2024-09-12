@@ -9,7 +9,7 @@ import { WebScraperDataProvider } from "../scraper/WebScraper";
 import { DocumentUrl, Progress } from "../lib/entities";
 import { billTeam } from "../services/billing/credit_billing";
 import { Document } from "../lib/entities";
-import { supabase_service } from "../services/supabase";
+import { supabase_service } from "../services/supabase_first";
 import { Logger } from "../lib/logger";
 import { ScrapeEvents } from "../lib/scrape-events";
 

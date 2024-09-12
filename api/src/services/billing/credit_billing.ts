@@ -1,19 +1,18 @@
 import { NotificationType } from "../../types";
 import { withAuth } from "../../lib/withAuth";
 import { sendNotification } from "../notification/email_notification";
-import { supabase_service } from "../supabase";
+import { supabase_service } from "../supabase_first";
 import { Logger } from "../../lib/logger";
 import { getValue, setValue } from "../redis";
 import { redlock } from "../redlock";
 
-
 const FREE_CREDITS = 500;
-
 
 export async function billTeam(team_id: string, credits: number) {
   return withAuth(supaBillTeam)(team_id, credits);
 }
 export async function supaBillTeam(team_id: string, credits: number) {
+  return { success: true, message: "overridden" };
   if (team_id === "preview") {
     return { success: true, message: "Preview team, no credits used" };
   }
@@ -171,9 +170,13 @@ export async function checkTeamCredits(team_id: string, credits: number) {
 
 // if team has enough credits for the operation, return true, else return false
 export async function supaCheckTeamCredits(team_id: string, credits: number) {
-  if (team_id === "preview") {
-    return { success: true, message: "Preview team, no credits used", remainingCredits: Infinity };
-  }
+  //if (team_id === "preview") {
+  return {
+    success: true,
+    message: "Preview team, no credits used",
+    remainingCredits: Infinity,
+  };
+  //}
 
   // Retrieve the team's active subscription and check for available coupons concurrently
   const [{ data: subscription, error: subscriptionError }, { data: coupons }] =
@@ -199,14 +202,15 @@ export async function supaCheckTeamCredits(team_id: string, credits: number) {
     );
   }
 
-  
-
   // Free credits, no coupons
   if (!subscription || subscriptionError) {
-
     // If there is no active subscription but there are available coupons
     if (couponCredits >= credits) {
-      return { success: true, message: "Sufficient credits available", remainingCredits: couponCredits };
+      return {
+        success: true,
+        message: "Sufficient credits available",
+        remainingCredits: couponCredits,
+      };
     }
 
     let creditUsages;
@@ -231,12 +235,14 @@ export async function supaCheckTeamCredits(team_id: string, credits: number) {
 
       retries++;
       if (retries < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, retryInterval));
+        await new Promise((resolve) => setTimeout(resolve, retryInterval));
       }
     }
 
     if (creditUsageError) {
-      Logger.error(`Credit usage error after ${maxRetries} attempts: ${creditUsageError}`);
+      Logger.error(
+        `Credit usage error after ${maxRetries} attempts: ${creditUsageError}`
+      );
       throw new Error(
         `Failed to retrieve credit usage for team_id: ${team_id}`
       );
@@ -276,10 +282,14 @@ export async function supaCheckTeamCredits(team_id: string, credits: number) {
       return {
         success: false,
         message: "Insufficient credits, please upgrade!",
-        remainingCredits: FREE_CREDITS - totalCreditsUsed
+        remainingCredits: FREE_CREDITS - totalCreditsUsed,
       };
     }
-    return { success: true, message: "Sufficient credits available", remainingCredits: FREE_CREDITS - totalCreditsUsed };
+    return {
+      success: true,
+      message: "Sufficient credits available",
+      remainingCredits: FREE_CREDITS - totalCreditsUsed,
+    };
   }
 
   let totalCreditsUsed = 0;
@@ -346,7 +356,11 @@ export async function supaCheckTeamCredits(team_id: string, credits: number) {
     //   subscription.current_period_start,
     //   subscription.current_period_end
     // );
-    return { success: false, message: "Insufficient credits, please upgrade!", remainingCredits: creditLimit - adjustedCreditsUsed };
+    return {
+      success: false,
+      message: "Insufficient credits, please upgrade!",
+      remainingCredits: creditLimit - adjustedCreditsUsed,
+    };
   } else if (creditUsagePercentage >= 0.8) {
     // Send email notification for approaching credit limit
     // await sendNotification(
@@ -357,7 +371,11 @@ export async function supaCheckTeamCredits(team_id: string, credits: number) {
     // );
   }
 
-  return { success: true, message: "Sufficient credits available", remainingCredits: creditLimit - adjustedCreditsUsed };
+  return {
+    success: true,
+    message: "Sufficient credits available",
+    remainingCredits: creditLimit - adjustedCreditsUsed,
+  };
 }
 
 // Count the total credits used by a team within the current billing period and return the remaining credits.

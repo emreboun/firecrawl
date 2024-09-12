@@ -128,7 +128,9 @@ CREATE TABLE firecrawl_jobs (
     mode "Mode" NOT NULL,
     url text,
     status text DEFAULT 'queued' NOT NULL,
+    success boolean,
     message text,
+    num_docs integer,
     docs jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -138,6 +140,9 @@ CREATE TABLE firecrawl_jobs (
     retry boolean,
     crawl_id uuid REFERENCES firecrawl_jobs(id) ON DELETE SET NULL,
 
+    time_taken decimal,
+    origin text,
+    num_tokens integer,
     page_insights jsonb,
     lighthouse_reports jsonb,
     crawl_depth integer,
@@ -145,7 +150,6 @@ CREATE TABLE firecrawl_jobs (
     total_issues integer,
     scan_options jsonb
 );
-
 
 --
 -- Table structure for table 'scrape_logs'

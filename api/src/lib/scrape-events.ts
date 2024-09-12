@@ -1,6 +1,6 @@
 import { Job } from "bullmq";
 import type { baseScrapers } from "../scraper/WebScraper/single_url";
-import { supabase_service as supabase } from "../services/supabase";
+import { supabase_service as supabase } from "../services/supabase_first";
 import { Logger } from "./logger";
 
 export type ScrapeErrorEvent = {

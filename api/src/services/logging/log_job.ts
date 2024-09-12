@@ -1,5 +1,5 @@
 import { ExtractorOptions } from "./../../lib/entities";
-import { supabase_service } from "../supabase";
+import { supabase_service } from "../supabase_first";
 import { FirecrawlJob } from "../../types";
 import { posthog } from "../posthog";
 import "dotenv/config";
@@ -25,7 +25,7 @@ export async function logJob(job: FirecrawlJob) {
         },
       ];
     }
-
+    //console.log(job.team_id);
     const { data, error } = await supabase_service
       .from("firecrawl_jobs")
       .insert([
@@ -45,7 +45,7 @@ export async function logJob(job: FirecrawlJob) {
           extractor_options: job.extractor_options,
           num_tokens: job.num_tokens,
           retry: !!job.retry,
-          crawl_id: job.crawl_id,
+          // crawl_id: job.crawl_id && job.crawl_id !== job.job_id ? job.crawl_id : null,
         },
       ]);
 

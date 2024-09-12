@@ -36,7 +36,7 @@ class SupabaseService {
         "Supabase environment variables aren't configured correctly. Supabase client will not be initialized. Fix ENV configuration or disable DB authentication with USE_DB_AUTHENTICATION env variable"
       );
     } else {
-      this.client = createClient(supabaseUrl, supabaseAnonKey);
+      this.client = createClient(supabaseUrl, supabaseServiceToken);
     }
   }
 

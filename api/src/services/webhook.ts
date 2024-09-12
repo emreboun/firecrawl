@@ -1,7 +1,7 @@
 import axios from "axios";
 import { legacyDocumentConverter } from "../../src/controllers/v1/types";
 import { Logger } from "../../src/lib/logger";
-import { supabase_service } from "./supabase";
+import { supabase_service } from "./supabase_first";
 import { WebhookEventType } from "../types";
 
 export const callWebhook = async (

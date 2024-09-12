@@ -28,7 +28,9 @@ export async function scrapeController(
   const origin = req.body.origin;
   const timeout = req.body.timeout;
   const pageOptions = legacyScrapeOptions(req.body);
-  const extractorOptions = req.body.extract ? legacyExtractorOptions(req.body.extract) : undefined;
+  const extractorOptions = req.body.extract
+    ? legacyExtractorOptions(req.body.extract)
+    : undefined;
   const jobId = uuidv4();
 
   const startTime = new Date().getTime();
@@ -56,7 +58,9 @@ export async function scrapeController(
 
   let doc: any | undefined;
   try {
-    doc = (await waitForJob(job.id, timeout))[0];
+    const temp: any = await waitForJob(job.id, timeout);
+    Logger.info(temp);
+    doc = temp[0];
   } catch (e) {
     Logger.error(`Error in scrapeController: ${e}`);
     if (e instanceof Error && e.message.startsWith("Job wait")) {
@@ -102,7 +106,7 @@ export async function scrapeController(
     // Don't bill if we're early returning
     return;
   }
-  if(req.body.extract && req.body.formats.includes("extract")) {
+  if (req.body.extract && req.body.formats.includes("extract")) {
     creditsToBeBilled = 50;
   }
 
@@ -121,8 +125,8 @@ export async function scrapeController(
     }
   }
 
-  if(pageOptions && pageOptions.includeExtract) {
-    if(!pageOptions.includeMarkdown && doc && doc.markdown) {
+  if (pageOptions && pageOptions.includeExtract) {
+    if (!pageOptions.includeMarkdown && doc && doc.markdown) {
       delete doc.markdown;
     }
   }

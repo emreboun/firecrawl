@@ -1,4 +1,4 @@
-import { supabase_service } from "../supabase";
+import { supabase_service } from "../supabase_first";
 import { withAuth } from "../../lib/withAuth";
 import { Resend } from "resend";
 import { NotificationType } from "../../types";
@@ -109,7 +109,9 @@ export async function sendNotificationInternal(
     // Logger.debug(`Notification already sent for team_id: ${team_id} and notificationType: ${notificationType} within the specified date range`);
     return { success: false };
   } else {
-    console.log(`Sending notification for team_id: ${team_id} and notificationType: ${notificationType}`);
+    console.log(
+      `Sending notification for team_id: ${team_id} and notificationType: ${notificationType}`
+    );
     // get the emails from the user with the team_id
     const { data: emails, error: emailsError } = await supabase_service
       .from("users")

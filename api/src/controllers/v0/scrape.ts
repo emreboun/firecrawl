@@ -70,49 +70,33 @@ export async function scrapeHelper(
     jobPriority
   );
 
-  let doc;
+  let doc: any = {};
 
-  const err = await Sentry.startSpan(
-    {
-      name: "Wait for job to finish",
-      op: "bullmq.wait",
-      attributes: { job: jobId },
-    },
-    async (span) => {
-      try {
-        doc = (await waitForJob(job.id, timeout))[0];
-      } catch (e) {
-        if (e instanceof Error && e.message.startsWith("Job wait")) {
-          span.setAttribute("timedOut", true);
-          return {
-            success: false,
-            error: "Request timed out",
-            returnCode: 408,
-          };
-        } else if (
-          typeof e === "string" &&
-          (e.includes("Error generating completions: ") ||
-            e.includes("Invalid schema for function") ||
-            e.includes(
-              "LLM extraction did not match the extraction schema you provided."
-            ))
-        ) {
-          return {
-            success: false,
-            error: e,
-            returnCode: 500,
-          };
-        } else {
-          throw e;
-        }
-      }
-      span.setAttribute("result", JSON.stringify(doc));
-      return null;
+  try {
+    doc = (await waitForJob(job.id, timeout))[0];
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("Job wait")) {
+      return {
+        success: false,
+        error: "Request timed out",
+        returnCode: 408,
+      };
+    } else if (
+      typeof e === "string" &&
+      (e.includes("Error generating completions: ") ||
+        e.includes("Invalid schema for function") ||
+        e.includes(
+          "LLM extraction did not match the extraction schema you provided."
+        ))
+    ) {
+      return {
+        success: false,
+        error: e,
+        returnCode: 500,
+      };
+    } else {
+      throw e;
     }
-  );
-
-  if (err !== null) {
-    return err;
   }
 
   await job.remove();
@@ -162,6 +146,7 @@ export async function scrapeController(req: Request, res: Response) {
       res,
       RateLimiterMode.Scrape
     );
+    //console.log(team_id, " ", success)
     if (!success) {
       return res.status(status).json({ error });
     }
@@ -254,16 +239,16 @@ export async function scrapeController(req: Request, res: Response) {
         }
       }
     }
-    
+
     let doc = result.data;
     if (!pageOptions || !pageOptions.includeRawHtml) {
       if (doc && doc.rawHtml) {
         delete doc.rawHtml;
       }
     }
-  
-    if(pageOptions && pageOptions.includeExtract) {
-      if(!pageOptions.includeMarkdown && doc && doc.markdown) {
+
+    if (pageOptions && pageOptions.includeExtract) {
+      if (!pageOptions.includeMarkdown && doc && doc.markdown) {
         delete doc.markdown;
       }
     }

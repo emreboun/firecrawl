@@ -1,4 +1,4 @@
-import { supabase_service } from "../services/supabase";
+import { supabase_service } from "../services/supabase_first";
 import { Logger } from "./logger";
 import * as Sentry from "@sentry/node";
 
@@ -37,7 +37,6 @@ export const supabaseGetJobsById = async (jobIds: string[]) => {
 
   return data;
 };
-
 
 export const supabaseGetJobByIdOnlyData = async (jobId: string) => {
   const { data, error } = await supabase_service

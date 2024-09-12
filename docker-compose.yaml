@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   api:
-    build: /api
+    build: ./api
     networks:
       - backend
     environment:
@@ -39,6 +39,8 @@ services:
     ports:
       - "3002:3002"
     command: ["pnpm", "run", "start"]
+    volumes:
+      - ./api:/app:cached
 
   redis:
     image: redis:7.4-alpine
